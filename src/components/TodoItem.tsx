@@ -1,14 +1,31 @@
+import { formatDueDate, isOverdue } from "@/lib/dueDate";
 import type { Todo } from "@/types/todo";
 
 type TodoItemProps = {
   todo: Todo;
+  // 今日の日付（"YYYY-MM-DD"）。期限切れの判定に使う
+  today: string;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
 };
 
-export default function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
+export default function TodoItem({
+  todo,
+  today,
+  onToggle,
+  onDelete,
+}: TodoItemProps) {
+  const overdue = isOverdue(todo, today);
+
   return (
-    <li className="flex items-center gap-1 py-1 pr-2 pl-1 transition-colors hover:bg-zinc-50 sm:pr-3 sm:pl-2">
+    // 期限切れの行は、左端の赤い線と薄い赤の背景で目立たせる（内側の影なので幅は変わらない）
+    <li
+      className={`flex items-center gap-1 py-1 pr-2 pl-1 transition-colors sm:pr-3 sm:pl-2 ${
+        overdue
+          ? "bg-red-50 shadow-[inset_4px_0_0_var(--color-red-600)] hover:bg-red-100/70"
+          : "hover:bg-zinc-50"
+      }`}
+    >
       {/* チェックボックスとタスク名をまとめて包み、行全体を押せるようにする */}
       <label className="flex min-h-12 min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-lg px-3 py-2">
         <input
@@ -17,12 +34,30 @@ export default function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
           onChange={() => onToggle(todo.id)}
           className="size-6 shrink-0 cursor-pointer accent-zinc-900"
         />
-        <span
-          className={`min-w-0 flex-1 break-words text-base leading-6 transition-colors ${
-            todo.completed ? "text-zinc-500 line-through" : "text-zinc-900"
-          }`}
-        >
-          {todo.title}
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          <span
+            className={`break-words text-base leading-6 transition-colors ${
+              todo.completed ? "text-zinc-500 line-through" : "text-zinc-900"
+            }`}
+          >
+            {todo.title}
+          </span>
+          {todo.dueDate && (
+            <span className="flex flex-wrap items-center gap-2 text-sm leading-5">
+              <span
+                className={
+                  overdue ? "font-medium text-red-700" : "text-zinc-600"
+                }
+              >
+                期限: {formatDueDate(todo.dueDate, today)}
+              </span>
+              {overdue && (
+                <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
+                  期限切れ
+                </span>
+              )}
+            </span>
+          )}
         </span>
       </label>
       <button
