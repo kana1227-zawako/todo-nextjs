@@ -1,4 +1,6 @@
 import { useSyncExternalStore } from "react";
+import { isValidDueDate } from "@/lib/dueDate";
+import { normalizeMemo } from "@/lib/memo";
 import type { Todo } from "@/types/todo";
 
 const STORAGE_KEY = "todo-nextjs:todos";
@@ -7,14 +9,27 @@ const STORAGE_KEY = "todo-nextjs:todos";
 let todos: Todo[] | null = null;
 const listeners = new Set<() => void>();
 
-function isTodo(value: unknown): value is Todo {
-  if (typeof value !== "object" || value === null) return false;
+// 正しい形のタスクなら Todo に整えて返し、そうでなければ null を返す。
+// 期限がない・壊れている場合は、タスクは残して期限なしとして扱う。
+// 「今日やる」も同じく、項目がない古いデータやおかしな値は「選んでいない」とする。
+// メモも、項目がない・文字列でない・空白だけの場合は「メモなし」とする
+function toTodo(value: unknown): Todo | null {
+  if (typeof value !== "object" || value === null) return null;
   const v = value as Record<string, unknown>;
-  return (
-    typeof v.id === "string" &&
-    typeof v.title === "string" &&
-    typeof v.completed === "boolean"
-  );
+  if (
+    typeof v.id !== "string" ||
+    typeof v.title !== "string" ||
+    typeof v.completed !== "boolean"
+  ) {
+    return null;
+  }
+  const todo: Todo = { id: v.id, title: v.title, completed: v.completed };
+  if (isValidDueDate(v.dueDate)) todo.dueDate = v.dueDate;
+  if (v.plannedForToday === true) todo.plannedForToday = true;
+  // 1000文字を超えていても、保存済みのデータを消さないよう切り詰めない
+  const memo = normalizeMemo(v.memo);
+  if (memo !== undefined) todo.memo = memo;
+  return todo;
 }
 
 // 保存データが壊れていても落ちないよう、正しい形のタスクだけを取り出す
@@ -22,7 +37,8 @@ function parseTodos(raw: string | null): Todo[] {
   if (!raw) return [];
   try {
     const data: unknown = JSON.parse(raw);
-    return Array.isArray(data) ? data.filter(isTodo) : [];
+    if (!Array.isArray(data)) return [];
+    return data.map(toTodo).filter((todo) => todo !== null);
   } catch {
     return [];
   }
