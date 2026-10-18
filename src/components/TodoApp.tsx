@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useState, type FormEvent, type KeyboardEvent } from "react";
+import TodayProgress from "@/components/TodayProgress";
 import TodoItem from "@/components/TodoItem";
 import UndoToast from "@/components/UndoToast";
 import { getTodayString, isOverdue } from "@/lib/dueDate";
+import { getTodayProgress } from "@/lib/todayProgress";
 import { setTodos, useTodos } from "@/lib/todoStorage";
 import type { Todo } from "@/types/todo";
 
@@ -38,6 +40,7 @@ export default function TodoApp() {
   // 日付が変わっても自動では更新せず、再読み込みや操作で描き直したときに反映する
   const today = isLoaded ? getTodayString() : "";
   const overdueCount = todos.filter((todo) => isOverdue(todo, today)).length;
+  const todayProgress = getTodayProgress(todos);
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -62,6 +65,17 @@ export default function TodoApp() {
     setTodos((prev) =>
       prev.map((todo) =>
         todo.id === id ? { ...todo, completed: !todo.completed } : todo,
+      ),
+    );
+  }
+
+  // 「今日やる」の付け外し。完了状態や期限には触れない
+  function togglePlanned(id: string) {
+    setTodos((prev) =>
+      prev.map((todo) =>
+        todo.id === id
+          ? { ...todo, plannedForToday: !todo.plannedForToday }
+          : todo,
       ),
     );
   }
@@ -140,6 +154,9 @@ export default function TodoApp() {
         </div>
       </form>
 
+      {/* 読み込み前に「まだありません」が一瞬出ないよう、読み込み後にだけ表示する */}
+      {isLoaded && <TodayProgress progress={todayProgress} />}
+
       <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
         <div className="border-b border-zinc-200 px-4 py-3 sm:px-5">
           <p
@@ -183,6 +200,7 @@ export default function TodoApp() {
                 todo={todo}
                 today={today}
                 onToggle={toggleTodo}
+                onTogglePlanned={togglePlanned}
                 onDelete={deleteTodo}
               />
             ))}

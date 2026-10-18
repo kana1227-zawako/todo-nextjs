@@ -6,6 +6,7 @@ type TodoItemProps = {
   // 今日の日付（"YYYY-MM-DD"）。期限切れの判定に使う
   today: string;
   onToggle: (id: string) => void;
+  onTogglePlanned: (id: string) => void;
   onDelete: (id: string) => void;
 };
 
@@ -13,6 +14,7 @@ export default function TodoItem({
   todo,
   today,
   onToggle,
+  onTogglePlanned,
   onDelete,
 }: TodoItemProps) {
   const overdue = isOverdue(todo, today);
@@ -59,6 +61,18 @@ export default function TodoItem({
             </span>
           )}
         </span>
+      </label>
+      {/* 「今日やる」は完了用のlabelの外に置き、専用のlabelで包む。
+          同じlabelの中に入れると、押したときに完了の方が切り替わってしまう */}
+      <label className="flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-zinc-300 px-3 text-sm text-zinc-700 transition-colors hover:bg-zinc-100 has-checked:border-amber-500 has-checked:bg-amber-50 has-checked:font-semibold has-checked:text-amber-900 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-zinc-900">
+        <input
+          type="checkbox"
+          checked={todo.plannedForToday === true}
+          onChange={() => onTogglePlanned(todo.id)}
+          aria-label={`「${todo.title}」を今日やる`}
+          className="size-4 shrink-0 cursor-pointer accent-amber-600"
+        />
+        <span aria-hidden="true">今日やる</span>
       </label>
       <button
         type="button"

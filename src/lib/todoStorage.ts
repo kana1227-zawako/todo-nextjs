@@ -9,7 +9,8 @@ let todos: Todo[] | null = null;
 const listeners = new Set<() => void>();
 
 // 正しい形のタスクなら Todo に整えて返し、そうでなければ null を返す。
-// 期限がない・壊れている場合は、タスクは残して期限なしとして扱う
+// 期限がない・壊れている場合は、タスクは残して期限なしとして扱う。
+// 「今日やる」も同じく、項目がない古いデータやおかしな値は「選んでいない」とする
 function toTodo(value: unknown): Todo | null {
   if (typeof value !== "object" || value === null) return null;
   const v = value as Record<string, unknown>;
@@ -22,6 +23,7 @@ function toTodo(value: unknown): Todo | null {
   }
   const todo: Todo = { id: v.id, title: v.title, completed: v.completed };
   if (isValidDueDate(v.dueDate)) todo.dueDate = v.dueDate;
+  if (v.plannedForToday === true) todo.plannedForToday = true;
   return todo;
 }
 
