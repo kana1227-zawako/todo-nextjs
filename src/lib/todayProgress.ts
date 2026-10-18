@@ -19,6 +19,6 @@ export function getTodayProgress(todos: Todo[]): TodayProgress {
     done,
     remaining: total - done,
     // 0件のときは割り算をしない。四捨五入だと199/200でも100%になるため切り捨てる
-    percent: total === 0 ? 0 : Math.floor((done / total) * 100),
+    percent: total === 0 ? 0 : Math.floor((done * 100) / total),
   };
 }
