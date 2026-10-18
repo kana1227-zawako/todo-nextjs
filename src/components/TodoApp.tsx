@@ -5,6 +5,7 @@ import TodayProgress from "@/components/TodayProgress";
 import TodoItem from "@/components/TodoItem";
 import UndoToast from "@/components/UndoToast";
 import { getTodayString, isOverdue } from "@/lib/dueDate";
+import { MAX_MEMO_LENGTH, normalizeMemo } from "@/lib/memo";
 import { getTodayProgress } from "@/lib/todayProgress";
 import { setTodos, useTodos } from "@/lib/todoStorage";
 import type { Todo } from "@/types/todo";
@@ -77,6 +78,22 @@ export default function TodoApp() {
           ? { ...todo, plannedForToday: !todo.plannedForToday }
           : todo,
       ),
+    );
+  }
+
+  // メモの保存。空白だけなら項目ごと消して「メモなし」に戻す。完了状態や期限には触れない
+  function updateMemo(id: string, memo: string) {
+    if (memo.length > MAX_MEMO_LENGTH) return;
+    const normalized = normalizeMemo(memo);
+
+    setTodos((prev) =>
+      prev.map((todo) => {
+        if (todo.id !== id) return todo;
+        if (normalized !== undefined) return { ...todo, memo: normalized };
+        const next = { ...todo };
+        delete next.memo;
+        return next;
+      }),
     );
   }
 
@@ -201,6 +218,7 @@ export default function TodoApp() {
                 today={today}
                 onToggle={toggleTodo}
                 onTogglePlanned={togglePlanned}
+                onUpdateMemo={updateMemo}
                 onDelete={deleteTodo}
               />
             ))}
